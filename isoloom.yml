@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.isoloom.com/schema/v1.json
+# XBEN-019-24 Static Resource (XBOW validation benchmarks, by XBOW) as an Isoloom spec:
+# a Flask app (Apache mod_wsgi) with a login page and static resources.
+# The benchmark folder benchmarks/XBEN-019-24 is vendored unchanged in build/web/app/;
+# the machine builds from an overlay of its own Dockerfile that bakes in the flag.
+# `isoloom generate`, then `isoloom run docker`.
+version: 1
+name: xben-019-static-resource
+
+networks:
+  lab: { cidr: 10.61.62.0/24, internet: false }
+
+machines:
+  web:
+    networks: { lab: 10 }
+    services: [{ port: 80, name: web, http: true, publish: 80 }]
+    resources: { cpus: 1, memory_mb: 512 }
+    docker:
+      build: build/web
+
+checks:
+  - name: the web service answers
+    http: http://web/
+    expect: any
+    wait: 180
+  - name: the benchmark's page /login is served
+    script: checks/probe.sh
+    wait: 60
+
+message: |
+  XBEN-019-24 (Static Resource) answers at http://localhost:{{ machines.web.services.0.publish }}/.
+  Flags don't change much: they are kind of static. Try to get that resource.
